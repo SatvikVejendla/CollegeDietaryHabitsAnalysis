@@ -1,0 +1,351 @@
+```{r message=FALSE, warning=FALSE}
+# load libraries and data
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(corrplot)
+
+data <- read_csv("food_coded.csv")
+```
+
+
+```{r}
+head(data)
+```
+
+```{r}
+summary(data)
+```
+
+
+```{r}
+paste("NA Values:", sum(is.na(data)))
+paste("Duplicate Values:", sum(duplicated(data)))
+```
+
+#NA Values
+```{r}
+categories = names(data)
+print(categories)
+```
+
+We notice that the reasons_comfort_coded column is in the dataframe twice so we can drop one of these columns.
+
+```{r}
+missingDF = data.frame(matrix(NA, nrow = 1, ncol = 3))
+names(missingDF) = c("Column", "Missing", "Total")
+
+for(i in 1:length(categories)){
+    curColumn <- categories[i]
+    numMissing <- sum(is.na(data[[curColumn]]))
+    numEntries <- length(data[[curColumn]])
+
+    missingDF[i,1] = i
+    missingDF[i,2] = numMissing
+    missingDF[i,3] = numEntries
+}
+
+
+naViz <- ggplot(data=missingDF, aes(x=Column)) +
+       geom_bar(aes(y=Missing), stat = "identity", alpha = 1,fill="blue") +
+       geom_bar(aes(y=Total), stat="identity", alpha=0.2, fill="red") +
+       ggtitle("NA Values Distribution")
+naViz
+```
+
+
+Discrete Variables
+Gender, Breakfast, calories_chicken, calories_day, calories_scone, coffee, comfort_food_reasons_coded,
+cook, cuisine, diet_current_coded, drink, eating_changes_coded, eating_changes_coded1, eating_out,
+employment, ethnic_food, exercise, father_education, fav_cuisine_coded, fav_food, fries, fruit_day,
+grade_level, greek_food, healthy_feeling, ideal_diet_coded, income, indian_food, italian_food, life_rewarding,
+marital_status, mother_education, nutritional_check, on_off_campus, parents_cook, pay_meal_out, persian_food,
+self_perception_weight, soup, sports, thai_food, tortilla_calories, turkey_calories, veggies_day, vitamins,
+waffle_calories,
+
+Continuous Variables
+GPA, weight
+
+Text Variables
+comfort_food, comfort_food_reasons, diet_current, eating_changes, father_profession, fav_cuisine,
+food_childhood, healthy_meal, ideal_diet, meals_dinner_friend, mothers_profession, type_sports
+
+
+Feature Engineering Variables
+GPA, Gender, calories_day, comfort_food_reasons_coded, cook, cuisine, diet_current_coded,
+eating_changes_coded, eating_changes_coded1, eating_out, employment, exercise, fruit_day,
+healthy_feeling, income, marital_status, nutritional_check, self_perception_weight, sports, vitamins, weight
+
+```{r}
+
+#remove na values from gpa
+data = data[!is.na(data$GPA),]
+data = data[data$GPA != "Unknown",]
+data = data[data$GPA != "Personal",]
+data = data[data$GPA != "nan",]
+
+data$GPA = as.numeric(data$GPA)
+
+
+#draw boxplot
+ggplot(data, aes(x = GPA)) + geom_boxplot() + ggtitle("GPA Boxplot")
+ggsave("./graphs/boxplots/GPA.png")
+```
+
+```{r}
+#remove na values from gpa
+
+data = data[!is.na(data$weight),]
+data = data[data$weight != "nan",]
+
+data$weight = as.numeric(data$weight)
+
+#draw boxplot
+ggplot(data, aes(x = weight)) + geom_boxplot() + ggtitle("Weight Boxplot")
+ggsave("./graphs/boxplots/weight.png")
+```
+
+
+```{r}
+
+numericData <- data %>% select(GPA, Gender, breakfast, calories_chicken, calories_day, calories_scone, coffee, comfort_food_reasons_coded...10, cook, cuisine, diet_current_coded, drink, eating_changes_coded, eating_changes_coded1, eating_out, employment, ethnic_food, exercise, father_education, fav_cuisine_coded, fav_food, fries, fruit_day, grade_level, greek_food, healthy_feeling, ideal_diet_coded, income, indian_food, italian_food, life_rewarding, marital_status, mother_education, nutritional_check, on_off_campus, parents_cook, pay_meal_out, persian_food, self_perception_weight, soup, sports, thai_food, tortilla_calories, turkey_calories, veggies_day, vitamins, waffle_calories, weight)
+
+#graph correlation matrix
+correlationMatrix <- cor(numericData)
+corrplot(correlationMatrix, method="color")
+```
+
+
+```{r}
+
+featuredNumericData <- data %>% select(GPA, Gender, calories_day, comfort_food_reasons_coded...10, cook, cuisine, diet_current_coded, eating_changes_coded, eating_changes_coded1, eating_out, employment, exercise, fruit_day, healthy_feeling, income, marital_status, nutritional_check, self_perception_weight, sports, vitamins, weight)
+
+png("./graphs/corMatrix.png")
+correrationMatrix <- cor(featuredNumericData)
+corrplot(correrationMatrix, method="color")
+dev.off()
+```
+
+Correlation Values with Question Mark
+calories_day, comfort_food_reasons_coded, cook, cuisine, employment, exercise, marital_status, self_perception_weight, sports
+```{r}
+data$calories_day[is.na(data$calories_day)] <- "NaN"
+data$comfort_food_reasons_coded...10[is.na(data$comfort_food_reasons_coded...10)] <- "NaN"
+data$cook[is.na(data$cook)] <- "NaN"
+data$cuisine[is.na(data$cuisine)] <- "NaN"
+data$employment[is.na(data$employment)] <- "NaN"
+data$exercise[is.na(data$exercise)] <- "NaN"
+data$marital_status[is.na(data$marital_status)] <- "NaN"
+data$self_perception_weight[is.na(data$self_perception_weight)] <- "NaN"
+data$sports[is.na(data$sports)] <- "NaN"
+
+
+pl1 <- ggplot(data=data, aes(x=calories_day)) + 
+      geom_bar(aes(y = (..count..)/sum(..count..)))
+
+pl2 <- ggplot(data=data, aes(x=comfort_food_reasons_coded...10)) + 
+      geom_bar(aes(y = (..count..)/sum(..count..)))
+
+pl3 <- ggplot(data=data, aes(x=cook)) + 
+      geom_bar(aes(y = (..count..)/sum(..count..)))
+
+pl4 <- ggplot(data=data, aes(x=cuisine)) + 
+      geom_bar(aes(y = (..count..)/sum(..count..)))
+pl5 <- ggplot(data=data, aes(x=employment)) + 
+      geom_bar(aes(y = (..count..)/sum(..count..)))
+pl6 <- ggplot(data=data, aes(x=exercise)) + 
+      geom_bar(aes(y = (..count..)/sum(..count..)))
+pl7 <- ggplot(data=data, aes(x=marital_status)) +
+      geom_bar(aes(y = (..count..)/sum(..count..)))
+pl8 <- ggplot(data=data, aes(x=self_perception_weight)) +
+      geom_bar(aes(y = (..count..)/sum(..count..)))
+pl9 <- ggplot(data=data, aes(x=sports)) +
+      geom_bar(aes(y = (..count..)/sum(..count..)))
+
+grid.arrange(pl1, pl2, pl3, pl4, pl5, pl6, pl7, pl8, pl9, ncol=3)
+```
+
+From correlation matrix, we see that the most relevant characteristics for GPA and weight are:
+
+Weight:
+GPA, Gender, cuisine, eating_changes_coded1, employment, fruit_day, income, self_perception_weight, sports
+
+GPA,
+Gender, Diet_current_coded, eating_changes_coded1, fruit_day, healthy_feeling, sports, weight
+
+
+
+Removing all NA values
+```{r}
+
+selectedData <- data %>% select(GPA, Gender, calories_day, comfort_food_reasons_coded...10, cook, cuisine, diet_current_coded, eating_changes_coded, eating_changes_coded1, eating_out, employment, exercise, fruit_day, healthy_feeling, income, marital_status, nutritional_check, self_perception_weight, sports, vitamins, weight)
+
+featuredNumericData = selectedData[selectedData$calories_day != "NaN",]
+featuredNumericData = featuredNumericData[featuredNumericData$comfort_food_reasons_coded...10 != "NaN",]
+featuredNumericData = featuredNumericData[featuredNumericData$cook != "NaN",]
+featuredNumericData = featuredNumericData[featuredNumericData$cuisine != "NaN",]
+featuredNumericData = featuredNumericData[featuredNumericData$employment != "NaN",]
+featuredNumericData = featuredNumericData[featuredNumericData$exercise != "NaN",]
+featuredNumericData = featuredNumericData[featuredNumericData$marital_status != "NaN",]
+featuredNumericData = featuredNumericData[featuredNumericData$self_perception_weight != "NaN",]
+featuredNumericData = featuredNumericData[featuredNumericData$sports != "NaN",]
+
+featuredNumericData = as.data.frame(lapply(featuredNumericData, as.numeric))
+
+print(nrow(featuredNumericData))
+
+png("./graphs/corMatrixProcessed.png")
+cr2 <- cor(featuredNumericData)
+p2 <- corrplot(cr2, method="color")
+
+dev.off()
+
+```
+
+
+```{r}
+
+genderBoxPlotData <- featuredNumericData
+genderBoxPlotData$Gender <- as.character(genderBoxPlotData$Gender)
+pl1 <- ggplot(data=genderBoxPlotData, aes(x=weight, y=Gender)) +
+      geom_boxplot()
+
+pl2 <- ggplot(data=genderBoxPlotData, aes(x=GPA, y=Gender)) +
+      geom_boxplot()
+
+grid.arrange(pl1, pl2, ncol=1)
+
+
+ggsave("./graphs/boxplots/gender.png", pl1)
+```
+
+```{r}
+
+cuisineBoxPlotData <- selectedData[selectedData$cuisine != "NaN",]
+cuisineBoxPlotData$cuisine <- as.character(genderBoxPlotData$cuisine)
+pl1 <- ggplot(data=cuisineBoxPlotData, aes(x=weight, y=cuisine)) +
+      geom_boxplot()
+pl1
+
+
+ggsave("./graphs/boxplots/cuisine.png", pl1)
+```
+
+
+```{r}
+currentDietData <- selectedData[selectedData$diet_current_coded != "NaN",]
+currentDietData$diet_current_coded <- as.character(currentDietData$diet_current_coded)
+pl1 <- ggplot(data=currentDietData, aes(x=GPA, y=diet_current_coded)) +
+      geom_boxplot()
+pl1
+
+
+ggsave("./graphs/boxplots/curDiet.png", pl1)
+```
+
+```{r}
+
+eatingChangesData <- selectedData[selectedData$eating_changes_coded1 != "NaN",]
+eatingChangesData$eating_changes_coded1 <- as.character(eatingChangesData$eating_changes_coded1)
+
+
+pl1 <- ggplot(data=eatingChangesData, aes(x=weight, y=eating_changes_coded1)) +
+      geom_boxplot()
+
+pl2 <- ggplot(data=eatingChangesData, aes(x=GPA, y=eating_changes_coded1)) +
+      geom_boxplot()
+
+grid.arrange(pl1, pl2, ncol=1)
+
+
+ggsave("./graphs/boxplots/eatingChanges.png", pl1)
+```
+
+```{r}
+
+fruitData <- selectedData[selectedData$fruit_day != "NaN",]
+fruitData$fruit_day <- as.character(fruitData$fruit_day)
+
+
+pl1 <- ggplot(data=fruitData, aes(x=weight, y=fruit_day)) +
+      geom_boxplot()
+
+pl2 <- ggplot(data=fruitData, aes(x=GPA, y=fruit_day)) +
+      geom_boxplot()
+
+grid.arrange(pl1, pl2, ncol=1)
+
+
+ggsave("./graphs/boxplots/fruitDay.png", pl1)
+```
+
+```{r}
+
+employmentData <- selectedData[selectedData$employment != "NaN",]
+employmentData$employment <- as.character(employmentData$employment)
+
+pl1 <- ggplot(data=employmentData, aes(x=weight, y=employment)) +
+      geom_boxplot()
+
+pl1
+
+
+ggsave("./graphs/boxplots/employment.png", pl1)
+```
+
+```{r}
+
+incomeData <- selectedData[selectedData$income != "NaN",]
+incomeData$income <- as.character(incomeData$income)
+
+pl1 <- ggplot(data=incomeData, aes(x=weight, y=income)) +
+      geom_boxplot()
+
+pl1
+
+
+ggsave("./graphs/boxplots/income.png", pl1)
+```
+
+```{r}
+selfPerceptionData <- selectedData[selectedData$self_perception_weight != "NaN",]
+selfPerceptionData$self_perception_weight <- as.character(selfPerceptionData$self_perception_weight)
+
+pl1 <- ggplot(data=selfPerceptionData, aes(x=weight, y=self_perception_weight)) +
+      geom_boxplot()
+
+pl1
+
+ggsave("./graphs/boxplots/selfPerception.png", pl1)
+```
+
+
+```{r}
+
+sportsData <- selectedData[selectedData$sports != "NaN",]
+
+sportsData$sports <- as.character(sportsData$sports)
+
+pl1 <- ggplot(data=sportsData, aes(x=GPA, y=sports)) +
+      geom_boxplot()
+
+pl2 <- ggplot(data=sportsData, aes(x=weight, y=sports)) +
+      geom_boxplot()
+
+grid.arrange(pl1, pl2, ncol=1)
+
+ggsave("./graphs/boxplots/sports.png", pl1)
+
+```
+
+```{r}
+weightGPAData <- selectedData[selectedData$weight != "NaN",]
+
+pl1 <- ggplot(data=weightGPAData, aes(x=weight, y=GPA)) +
+      geom_point()
+pl1
+
+ggsave("./graphs/weightGPA.png", pl1)
+
+```
